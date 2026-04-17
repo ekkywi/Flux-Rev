@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      target: development
+    image: flux-app:development
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+    volumes:
+      - .:/var/www/html
+    ports:
+      - "9999:8000"
+      - "5173:5173"
+
+  db:
+    ports:
+      - "5434:5432"
+
+  redis:
+    ports:
+      - "6379:6379"

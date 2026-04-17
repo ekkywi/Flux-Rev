@@ -1,0 +1,59 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      target: prod
+    image: flux-app:production
+    container_name: flux_app
+    restart: always
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+    networks:
+      - flux_net
+
+  web:
+    image: nginx:bookworm
+    container_name: flux_web
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx:/etc/nginx/conf.d
+    depends_on:
+      - app
+    networks:
+      - flux_net
+
+  db:
+    image: postgres:18-bookworm
+    container_name: flux_db
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - flux_db_data:/var/lib/postgresql
+    networks:
+      - flux_net
+
+  redis:
+    image: redis:8-bookworm
+    container_name: flux_redis
+    restart: always
+    volumes:
+      - flux_redis_data:/data
+    networks:
+      - flux_net
+
+volumes:
+  flux_db_data:
+  flux_redis_data:
+
+networks:
+  flux_net:
+    driver: bridge
