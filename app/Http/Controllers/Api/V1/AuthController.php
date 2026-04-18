@@ -3,41 +3,45 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\Api\V1\LoginRequest;
+use App\Services\AuthService;
+use Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
+    public function __construct(
+        protected AuthService $authService
+    ) {}
+
+    public function login(LoginRequest $request): JsonResponse
     {
-        $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
-        ]);
+        $result = $this->authService->login(
+            $request->validated('email'),
+            $request->validated('password')
+        );
 
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!$result) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Email atau Password salah.'
+                'status' => 'error',
+                'message' => 'Email atau Password salah.',
             ], 401);
         }
 
-        $token = $user->createToken('flux-token')->plainTextToken;
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Login berhasil.',
+            'data'  => $result,
+        ], 200);
+    }
+
+    public function register(RegisterRequest $request): JsonResponse
+    {
+        $result = $this->authService->register($request->validated());
 
         return response()->json([
-            'status'  => 'success',
-            'message' => 'Login berhasil.',
-            'data'    => [
-                'user'  => [
-                    'id'    => $user->id,
-                    'name'  => $user->name,
-                    'email' => $user->email,
-                ],
-                'token' => $token
-            ]
-        ], 200);
+            'status' => 'success',
+            'message' => 'Registerasi berhasil.',
+            'data'  => $result,
+        ], 201);
     }
 }
